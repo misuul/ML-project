@@ -1,0 +1,157 @@
+---
+title: "Practical Machine Learning Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(caret)
+library(kernlab)
+library(randomForest)
+library(ggplot2)
+setwd("~/Dropbox (fresh4cast)/Learn/ML in R/project/ML-project")
+```
+
+## Question
+
+Can we predict the manner in which people lift barbells, using the data from sensors on their belt, arm, forearm and on the dumbell itself?
+
+
+## Feature selection
+
+The dataset contains 19622 observations of 160 variables. We are looking to predict the "classe" variable. After inspecting the variables using str(dt) we first exclude the columns that are not relevant, such as name* and timestamp. Then split the dataset into training, testing and validation. 
+* Note:
+Each person is likely to make the movements in a slightly different way. So if we use the name in the model (by turning it into 6 indicator variables) we will probably get a better fit, but the model will not generalise as well.
+
+```{r data, cache=TRUE}
+dt = read.csv("pml-training.csv")
+```
+```{r split, cache=FALSE}
+dts = dt[,c(6:160)]
+inBuild <- createDataPartition(y=dts$classe, p=8/10, list=FALSE)
+bld <- dts[inBuild,]
+vld <- dts[-inBuild,]
+inTrain <- createDataPartition(y=bld$classe, p=6/8, list=FALSE)
+trn <- bld[inTrain,]
+tst <- bld[-inTrain,]
+str(trn)
+summary(complete.cases(trn))
+```
+
+```{r explore, cache=FALSE}
+g <- ggplot(data=trn, mapping=aes(num_window, classe)) + geom_point()
+
+```
+
+Initial data inspection shows that 67 fields have 97.96% NAs. These seem to summarise the individual measurements and they correspond to the lines where "new_window" is true. If a good model can be fit using summary metrics, it would be more scalable than using raw metrics, as there are about 50 records in each measurement window. We select only the columns containing summary data and save the column names so that we can apply them to the test and validation sets.
+
+Two models are trained using the Random Forrest method: one using the 240 summary observations, and one using the 11k individual measurements. The summary route produced significantly better accuracy. Since this is also the more scalable route, all further work is based on the summary features.
+
+```{r cleaning}
+not_na <- function(x) sum(!is.na(x))
+table(sapply(trn, not_na))
+trns<-trn[trn$new_window=="yes",(colMeans(is.na(trn)) >0.1 | colnames(trn)=="classe")]
+str(trns)
+sum(complete.cases(trns))
+summary_cols <- colnames(trns)
+
+trnd<-trn[trn$new_window=="no",(colMeans(is.na(trn)) <0.1 | colnames(trn)=="classe")]
+trnd <- trnd[,c(3:88)]
+str(trnd)
+sum(complete.cases(trnd))
+detail_cols <- colnames(trnd)
+dim(trnd)
+```
+
+
+
+```{r cross-validation}
+preObj <- preProcess(trns[,-68], method=c("center", "scale"))
+set.seed(3223)
+model <- train(classe ~ ., data=trns, preProcess=preObj, method="rpart")
+
+model <- train(classe ~ ., data=trns, 
+               preProcess=c("center", "scale"), method="rf",              
+               trControl=trainControl(method="repeatedcv", number=20, repeats = 5))
+
+model$finalModel
+
+modelB <- train(classe ~ ., data=trns, 
+                preProcess=c("center", "scale"), method="gbm", verbose=FALSE,
+                trControl=trainControl(method="repeatedcv", number=5, repeats = 5))
+
+modelB$finalModel
+
+
+par(mfrow=c(1,1))
+plot(model$finalModel, uniform=TRUE, main="Biceps Curl")
+text(model$finalModel, use.n=TRUE, all=TRUE, cex=.8)
+confusionMatrix(model)
+
+```
+
+
+## Model and Cross-Validation
+Three classification methods were tried, at first with default parameters: Recursive Partitioning and Regression Trees, Random Forrest and Boosting. Random Forrest and Boosting had significantly higher accuracy than rpart. The cross-validation parameters were fine-tuned to improve accuracy further. Random Forrest worked best with a relatively high number of folds (20), repeated 5 times. A higher number of repetitions did not improve the accuracy. Boosting worked best with 5 folds repeated 5 times.
+
+The models for both Random Forrest and Boosting were tested on the test set. Since the data allows a validation set, several parameters were used for each model before selecting the final ones: RF 20 folds 5 repeats, BST 5 folds 5 repeats.
+
+
+
+```{r test_rf}
+tsts<-tst[tst$new_window=="yes",(colMeans(is.na(tst)) >0.1 | colnames(tst)=="classe")]
+pred <- predict(model, tsts)
+tsts$predRight <- pred==tsts$classe
+table(pred, tsts$class)
+mean(tsts$predRight)
+ggplot(tsts, mapping = aes(x = classe, y = sum(predRight))) + facet_grid(.~classe) + geom_bar(stat="identity")
+ggplot(mapping = aes(x = tsts$classe, y = pred, alpha=0.005, size=mean(tsts$predRight))) + geom_point()
+str(tsts)
+```
+
+```{r test_B}
+tsts<-tst[tst$new_window=="yes",(colMeans(is.na(tst)) >0.1 | colnames(tst)=="classe")]
+pred <- predict(modelB, tsts)
+tsts$predRight <- pred==tsts$classe
+table(pred, tsts$classe)
+mean(tsts$predRight)
+ggplot(tsts, mapping = aes(x = classe, y = sum(predRight))) + facet_grid(.~classe) + geom_bar(stat="identity")
+ggplot(mapping = aes(x = tsts$classe, y = pred, alpha=0.005, size=3)) + geom_point()
+```
+
+## Validation
+
+```{r valid_rf}
+vlds<-vld[vld$new_window=="yes",(colMeans(is.na(vld)) >0.1 | colnames(vld)=="classe")]
+pred <- predict(model, vlds)
+vlds$predRight <- pred==vlds$classe
+table(pred, vlds$classe)
+mean(vlds$predRight)
+ggplot(vlds, mapping = aes(x = classe, y = sum(predRight))) + facet_grid(.~classe) + geom_bar(stat="identity")
+ggplot(mapping = aes(x = vlds$classe, y = pred, alpha=0.005, size=3)) + geom_point()
+```
+
+```{r valid_B}
+vlds<-vld[vld$new_window=="yes",(colMeans(is.na(vld)) >0.1 | colnames(vld)=="classe")]
+pred <- predict(modelB, vlds)
+vlds$predRight <- pred==vlds$classe
+table(pred, vlds$classe)
+mean(vlds$predRight)
+ggplot(vlds, mapping = aes(x = classe, y = sum(predRight))) + facet_grid(.~classe) + geom_bar(stat="identity")
+ggplot(mapping = aes(x = vlds$classe, y = pred, alpha=0.005, size=mean(vlds$predRight))) + geom_point()
+```
+
+
+## Validation
+
+## Summary
+- how you built your model
+- how you used cross validation
+- what you think the expected out of sample error is
+- why you made the choices you did
+- use prediction model to predict 20 test cases.
+
+
+## More details on the exercise
+Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
+Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4EaydqvAb
