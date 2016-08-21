@@ -6,9 +6,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(caret)
-library(kernlab)
-library(randomForest)
-library(ggplot2)
+library(doMC)
 setwd("~/Dropbox (fresh4cast)/Learn/ML in R/project/ML-project")
 ```
 
@@ -17,200 +15,64 @@ Can we predict the manner in which people lift barbells, using the data from sen
 
 
 ## Feature selection
-The dataset contains 19622 observations of 160 variables. We are looking to predict "classe". After inspecting the variables using str(dt) and head(dt) we first exclude the columns that are not relevant, such as name* and timestamp. Then split the dataset into training, testing and validation. 
+The dataset contains 19622 observations of 160 variables. The objective is to predict "classe". After inspecting the variables using str(dt) we first exclude the columns that are not relevant, and variables with incomplete measurements. Then split the dataset into training and testing sets. 
 * Note:
-Each person is likely to make the movements in a slightly different way. So if we use the name in the model (by turning it into 6 indicator variables) we will probably get a better fit. But the model will not generalise as well.
+Each person is likely to make the movements in a slightly different way. So if we use the name in the model (by turning it into 6 indicator variables) we will probably get a better fit. But that model would not generalise as well.
 
-```{r data, cache=TRUE}
-dt = read.csv("pml-training.csv")
-```
-```{r split, cache=TRUE}
-dts = dt[,c(6:160)]
-inBuild <- createDataPartition(y=dts$classe, p=8/10, list=FALSE)
-bld <- dts[inBuild,]
-vld <- dts[-inBuild,]
-inTrain <- createDataPartition(y=bld$classe, p=6/8, list=FALSE)
-trn <- bld[inTrain,]
-tst <- bld[-inTrain,]
+```{r data, warning = FALSE, cache=TRUE}
+dt = read.csv("pml-training.csv", na.strings=c("","NA"))
+tt = read.csv("pml-testing.csv", na.strings=c("","NA"))
+dts = dt[,c(8:160)]
+
+dts = dts[,apply(dts, 2, function(x) !any(is.na(x)))]
+inTrain <- createDataPartition(y=dts$classe, p=6/10, list=FALSE)
+trn <- dts[inTrain,]
+tst <- dts[-inTrain,]
 summary(complete.cases(trn))
-```
 
-```{r explore, cache=TRUE}
-ggplot(data=trn, mapping=aes(num_window, classe)) + geom_point()
 
-```
-Given the high number of possible features, the challenge is to reduce them to the smallest usable subset, in order to make the model scalable.
-
-### Route 1: use summary data provided in dataset
-Initial data inspection shows that 67 fields have 97.96% NAs. These seem to summarise the individual measurements and they correspond to the lines where "new_window" is true. If a good model can be fit using summary metrics, it would be more scalable than using raw metrics, as there are about 50 records in each measurement window. We select only the columns containing summary data and save the column names so that we can apply them to the test and validation sets.
-
-Two models are trained using the Random Forrest method: one using the summary observations, and one using the individual measurements. The summary route produced significantly better accuracy. 
-
-```{r cleaning, cache=TRUE}
-not_na <- function(x) sum(!is.na(x))
-table(sapply(trn, not_na))
-trns<-trn[trn$new_window=="yes",(colMeans(is.na(trn)) >0.1 | colnames(trn)=="classe")]
-sum(complete.cases(trns))
-summary_cols <- colnames(trns)
-
-trnd<-trn[trn$new_window=="no",(colMeans(is.na(trn)) <0.1 | colnames(trn)=="classe")]
-trnd <- trnd[,c(3:88)]
-sum(complete.cases(trnd))
-detail_cols <- colnames(trnd)
 ```
 
 
-```{r cross-validation, cache=TRUE}
+## Model selection
+Three classification methods were tried: Recursive Partitioning and Regression Trees, Random Forrest and Boosting. Random Forrest and Boosting had significantly higher accuracy than rpart. The cross-validation parameters were fine-tuned to improve accuracy further. Random Forrest and Boosting worked well with 5 folds repeated 3 times. Only marginal improvements were obtained with more folds or repetitions. 
+
+
+```{r train_with_cross-validation, warning = FALSE, cache=TRUE}
 set.seed(3223)
+registerDoMC(cores = 7)
 
-model_rp <- train(classe ~ ., data=trns, preProcess=c("center", "scale"), method="rpart", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
-```
+model_rp <- train(classe ~ ., data=trn, method="rpart", trControl=trainControl(method="repeatedcv", number=5, repeats = 3))
 
-```{r rf, cache=TRUE}
-model_rf <- train(classe ~ ., data=trns, preProcess=c("center", "scale"), method="rf", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
-```
+model_rf <- train(classe ~ ., data=trn, method="rf", trControl=trainControl(method="repeatedcv", number=5, repeats = 3))
 
-```{r bs, cache=TRUE}
-model_bs <- train(classe ~ ., data=trns, preProcess=c("center", "scale"), method="gbm", verbose=FALSE, trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
-```
+model_bs <- train(classe ~ ., data=trn, method="gbm", verbose=FALSE, trControl=trainControl(method="repeatedcv", number=5, repeats = 3))
 
-```{r rf_plot, cache=TRUE}
+confusionMatrix(model_rp)
 confusionMatrix(model_rf)
 confusionMatrix(model_bs)
 ```
 
 
-## Model and Cross-Validation
-Three classification methods were tried, at first with default parameters: Recursive Partitioning and Regression Trees, Random Forrest and Boosting. Random Forrest and Boosting had significantly higher accuracy than rpart. The cross-validation parameters were fine-tuned to improve accuracy further. Random Forrest worked best with a relatively high number of folds (20), repeated 5 times. A higher number of repetitions did not improve the accuracy. Boosting worked best with 5 folds repeated 5 times.
+## Out of sample error
+The three models are tested for out-of-sample error. Random Forrest performs best, with less than 0.5% error.
 
-The models for both Random Forrest and Boosting were tested on the test set. Since the data allows a validation set, several cross validation parameters were used for each model before selecting the final ones: 10 folds and 3 repeats.
+```{r testing, warning = FALSE, cache=TRUE}
+confusionMatrix(predict(model_rp, tst), tst$classe)
+confusionMatrix(predict(model_rf, tst), tst$classe)
+confusionMatrix(predict(model_bs, tst), tst$classe)
 
-
-## Testing and Validation
-The test set was used a few times to fine-tune the models.
-
-```{r test_rf, cache=TRUE}
-tsts<-tst[tst$new_window=="yes",(colMeans(is.na(tst)) >0.1 | colnames(tst)=="classe")]
-pred <- predict(model_rf, tsts)
-tsts$predRight <- pred==tsts$classe
-table(pred, tsts$class)
-mean(tsts$predRight)
-```
-
-```{r test_B, cache=TRUE}
-tsts<-tst[tst$new_window=="yes",(colMeans(is.na(tst)) >0.1 | colnames(tst)=="classe")]
-pred <- predict(model_bs, tsts)
-tsts$predRight <- pred==tsts$classe
-table(pred, tsts$classe)
-mean(tsts$predRight)
-```
-
-The validation set was used once at the end. As expected, the accuracy was lower. Based on the validation set, the out of sample error can be estimated at 30% for Random Forrest and 28% for Boosting.
-```{r valid_rf, cache=TRUE}
-vlds<-vld[vld$new_window=="yes",(colMeans(is.na(vld)) >0.1 | colnames(vld)=="classe")]
-pred <- predict(model_rf, vlds)
-vlds$predRight <- pred==vlds$classe
-table(pred, vlds$classe)
-mean(vlds$predRight)
-```
-
-```{r valid_B, cache=TRUE}
-vlds<-vld[vld$new_window=="yes",(colMeans(is.na(vld)) >0.1 | colnames(vld)=="classe")]
-pred <- predict(model_bs, vlds)
-vlds$predRight <- pred==vlds$classe
-table(pred, vlds$classe)
-mean(vlds$predRight)
-```
-
-
-### Route 2: use detailed measurements instead of summary characteristics, but take the total acceleration for each sensor.
-
-
-```{r cleaning2, cache=TRUE}
-trns2<-trn[trn$new_window=="no", (colMeans(is.na(trn)) <0.1 | colnames(trn)=="classe")]
-trns2 <- trns2[, grep("(total|classe)", names(trns2), ignore.case = TRUE)]
-str(trns2)
-```
-
-
-```{r cross-validation2, cache=TRUE}
-model_rp2 <- train(classe ~ ., data=trns2, preProcess=c("center", "scale"), method="rpart", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
-```
-```{r, cache=TRUE}
-model_rf2 <- train(classe ~ ., data=trns2, preProcess=c("center", "scale"), method="rf", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
-```
-```{r, cache=TRUE}
-model_bs2 <- train(classe ~ ., data=trns2, preProcess=c("center", "scale"), method="gbm", verbose=FALSE, trControl=trainControl(method="repeatedcv", number=10, repeats = 1))
-```
-
-```{r test_rf2, cache=TRUE}
-tsts2<-tst[tst$new_window=="yes",
-           (colMeans(is.na(tst)) <0.1 | colnames(tst)=="classe")]
-pred <- predict(model_rf2, tsts2)
-tsts2$predRight <- pred==tsts2$classe
-table(pred, tsts2$class)
-mean(tsts2$predRight)
-```
-
-```{r test_B2, cache=TRUE}
-tsts2<-tst[tst$new_window=="yes",
-           (colMeans(is.na(tst)) <0.1 | colnames(tst)=="classe")]
-pred <- predict(model_bs2, tsts2)
-tsts2$predRight <- pred==tsts2$classe
-table(pred, tsts2$classe)
-mean(tsts2$predRight)
-```
-
-The validation set was used once at the end. As expected, the accuracy was lower. Based on the validation set, the out of sample error can be estimated at 37% for Random Forrest and 50% for Boosting. Calculations are shown below. 
-```{r valid_rf2, cache=TRUE}
-vlds2<-vld[vld$new_window=="yes",
-          (colMeans(is.na(vld)) <0.1 | colnames(vld)=="classe")]
-pred <- predict(model_rf2, vlds2)
-vlds2$predRight <- pred==vlds2$classe
-table(pred, vlds2$classe)
-mean(vlds2$predRight)
-```
-
-```{r valid_B2, cache=TRUE}
-vlds<-vld[vld$new_window=="yes",(colMeans(is.na(vld)) <0.1 | colnames(vld)=="classe")]
-pred <- predict(model_bs2, vlds)
-vlds$predRight <- pred==vlds$classe
-table(pred, vlds$classe)
-mean(vlds$predRight)
-```
-
-The second route is clearly less accurate. Going back to the first route, we try to refine it by excluding highly correlated predictors.
-
-### Route 1b: summary predictors, exclude highly correlated ones
-```{r, cache=TRUE}
-trns3<-trn[trn$new_window=="yes",(colMeans(is.na(trn)) >0.1 | colnames(trn)=="classe")]
-r1 <- cor(trns[,-68])
-correlated <- findCorrelation(r1, cutoff=0.9)
-tt <- trns[,-correlated]
-model_rf3<-train(classe~., data=tt, method="rf", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
-
-tsts3<-tst[tst$new_window=="yes",(colMeans(is.na(tst)) >0.1 | colnames(tst)=="classe")]
-pred <- predict(model_rf3, tsts3)
-tsts3$predRight <- pred==tsts3$classe
-table(pred, tsts3$class)
-mean(tsts3$predRight)
-
-vlds3<-vld[vld$new_window=="yes",(colMeans(is.na(vld)) >0.1 | colnames(vld)=="classe")]
-pred <- predict(model_rf3, vlds3)
-vlds3$predRight <- pred==vlds3$classe
-table(pred, vlds3$classe)
-mean(vlds3$predRight)
 ```
 
 
 ## Summary and Conclusion
-The manner in which people lift barbells can be predicted from the measurements available with an estimated error rate of 22%. The model was built using two routes. Feature selection and data compression were prioritised in order to obtain a scalable model. The first route, using the summary data identified in the dataset, produced better accuracy. Repeated cross validation with 10 folds was used. After the first route was chosen over the second, the model was further improved by removing highly correlated predictors. The final model had ~78% accuracy on training, test and validation sets.
+The manner in which people lift barbells can be predicted from the measurements available with an estimated error rate significantly below 1%. 
 
-Accuracy of final model using random forrest on summary metrics excluding highly correlated predictors
-```{r final_plot, cache=TRUE}
-plot(model_rf3$finalModel, main="Accuracy of final model")
+
+```{r final_model, warning = FALSE, cache=TRUE}
+plot(model_rf$finalModel, main="Accuracy of final model")
+tts = tt[,c(8:160)]
+tts = tts[,apply(tts, 2, function(x) !any(is.na(x)))]
+# predict(model_rf, tts)
 ```
 
-#### More details on the exercise
-Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E).
-Read more: http://groupware.les.inf.puc-rio.br/har#ixzz4EaydqvAb

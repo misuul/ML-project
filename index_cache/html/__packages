@@ -8,3 +8,6 @@ rpart
 survival
 gbm
 plyr
+foreach
+iterators
+doMC
