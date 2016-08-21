@@ -161,7 +161,7 @@ table(pred, tsts2$classe)
 mean(tsts2$predRight)
 ```
 
-The validation set was used once at the end. As expected, the accuracy was lower. Based on the validation set, the out of sample error can be estimated at 30% for Random Forrest and 28% for Boosting.
+The validation set was used once at the end. As expected, the accuracy was lower. Based on the validation set, the out of sample error can be estimated at 37% for Random Forrest and 50% for Boosting. Calculations are shown below. 
 ```{r valid_rf2, cache=TRUE}
 vlds2<-vld[vld$new_window=="yes",
           (colMeans(is.na(vld)) <0.1 | colnames(vld)=="classe")]
@@ -178,6 +178,8 @@ vlds$predRight <- pred==vlds$classe
 table(pred, vlds$classe)
 mean(vlds$predRight)
 ```
+
+The second route is clearly less accurate. Going back to the first route, we try to refine it by excluding highly correlated predictors.
 
 ### Route 1b: summary predictors, exclude highly correlated ones
 ```{r, cache=TRUE}
@@ -202,7 +204,7 @@ mean(vlds3$predRight)
 
 
 ## Summary and Conclusion
-The model was built using two routes. Feature selection and data compression were prioritised in order to obtain a scalable model. The first route, using the summary data identified in the dataset, produced better accuracy. Repeated cross validation with 10 folds was used. After the first route was chosen over the second, the model was further improved by removing highly correlated predictors. The final model had ~78% accuracy on training, test and validation sets.
+The manner in which people lift barbells can be predicted from the measurements available with an estimated error rate of 22%. The model was built using two routes. Feature selection and data compression were prioritised in order to obtain a scalable model. The first route, using the summary data identified in the dataset, produced better accuracy. Repeated cross validation with 10 folds was used. After the first route was chosen over the second, the model was further improved by removing highly correlated predictors. The final model had ~78% accuracy on training, test and validation sets.
 
 Accuracy of final model using random forrest on summary metrics excluding highly correlated predictors
 ```{r final_plot, cache=TRUE}
