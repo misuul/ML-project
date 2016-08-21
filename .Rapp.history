@@ -1,0 +1,261 @@
+url2
+con <- url("http://biostat.jhsph.edu/~jleek/contact.html")
+htmlCode <- readlines(con)
+htmlCode <- readLines(con)
+close(con)
+htmlCode
+sel <- htmlCode[10]
+sel
+nchar(sel)
+nchar(htmlCode[20])
+nchar(htmlCode[30])
+nchar(htmlCode[100])
+con2 <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.table(con)
+d <- read(con)
+d <- read.fwf(con)
+d <- read.fwf(con, widths = c(16, 13, 13, 13, 13))
+d <- read.fwf(con2, widths = c(16, 13, 13, 13, 13))
+close(con)
+close(con2)
+con2 <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con2, widths = c(16, 13, 13, 13, 13))
+d
+fourth <- d[,4]
+fourth
+sum(fourth)
+d <- read.fwf(con2, widths = c(16, 4, 9, 4, 9, 4, 9, 4, 9))
+con2 <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con2, widths = c(16, 4, 9, 4, 9, 4, 9, 4, 9))
+close(con2)
+d
+names(d)
+con2 <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con2, widths = c(16, 4, 9, 4, 9, 4, 9, 4, 9), header = TRUE)
+d <- read.fwf(con2, widths = c(16, 4, 9, 4, 9, 4, 9, 4, 9), header = TRUE, skip = 3)
+con2 <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con2, widths = c(16, 4, 9, 4, 9, 4, 9, 4, 9), header = TRUE, skip = 3)
+d
+con2 <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con2, widths = c(16, 4, 9, 4, 9, 4, 9, 4, 9), header = TRUE, skip = 4)
+con <- url("http://biostat.jhsph.edu/~jleek/contact.html")
+file <- http(con)
+library(http)
+d <- read.file(con)
+d <- readlines(con)
+d <- readLines(con)
+x <- nchar(d[10,])
+d[10,]
+d
+d[10]
+x <- nchar(d[10])
+y<-nchar(d[20])
+z<-nchar(d[30])
+t<-nchar(d[100])
+c(x,y,z,t)
+close(con)
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.table(con)
+names(con)
+d<- readLines(con)
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d<- readLines(con)
+d
+d[,1]
+dt <- data.frame(d)
+dt
+dt[0,1]
+dt[,1]
+nchar(d[1,])
+nchar(dt[1,])
+nchar(d[1])
+nchar(d[100])
+nchar(d[10])
+nchar(d[1061])
+widths <- c(27, 4, 61)
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con, widths, header = TRUE)
+d <- read.fwf(con, widths, header = TRUE, skip = 2)
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con, widths, header = TRUE, skip = 2)
+d <- read.fwf(con, widths = widths)
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con, widths = widths)
+d
+d[,2]
+sum(d[,2])
+v <- d[1:4,2]
+v
+widths
+v <- d[5,2]
+v
+wd <- c(28,4,30)
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con, widths = wd)
+d
+con <- url("https://d396qusza40orc.cloudfront.net/getdata%2Fwksst8110.for")
+d <- read.fwf(con, widths = wd, skip = 4)
+d
+d[,2]
+is.na[d]
+sum(d[,2])
+library(datasets)
+data(iris)
+?iris
+?tapply
+iris
+head(iris)
+tapply(iris, $Species = "virginica", mean)
+tapply(iris, Species = "virginica", mean)
+vi <- iris[iris$Species = "virginica"]
+vi <- iris[iris$Species == "virginica"]
+vi <- iris[$Species == "virginica"]
+vi <- iris[Species == "virginica"]
+vi <- iris[iris[,5] == "virginica"]
+?data.frame
+class(iris)
+vi <- iris[iris$Species == "virginica"]
+subset(iris, Species == 'setosa')
+subset(iris, Species == 'virginica')
+vi <-subset(iris, Species == 'virginica')
+sl <- vi[,1]
+sl
+sapply(sl, mean)
+sapply(vi, mean)
+mean(sl)
+rowMeans(iris[, 1:4])
+apply(iris[, 1:4], 2, mean)
+apply(iris[, 1:4], 1, mean)
+apply(iris[, 1:4], 2, mean)
+data(mtcars)
+head(mtcars)
+sapply(split(mtcars$mpg, mtcars$cyl), mean)
+sapply(mtcars, cyl, mean)
+tapply(mtcars$mpg, mtcars$cyl, mean)
+tapply(mtcars$cyl, mtcars$mpg, mean)
+with(mtcars, tapply(mpg, cyl, mean))
+mean(mtcars$mpg, mtcars$cyl)
+split(mtcars, mtcars$cyl)
+tapply(mtcars$cyl, mtcars$mpg, mean)
+sapply(split(mtcars$mpg, mtcars$cyl), mean)
+sapply(split(mtcars$hp, mtcars$cyl), mean)
+v <- sapply(split(mtcars$hp, mtcars$cyl), mean)
+v
+v8 <- v[3]
+v4 <- v[1]
+v4
+v8
+v8-v4
+debug(ls)
+ls()
+n
+q
+undebug(ls)
+ls()
+library(swirl)
+ls()
+bye()
+swirl()
+install_from_swirl("Getting_and_Cleaning_Data")
+swirl()
+mydf <- read.csv(path2csv, stringsAsFactors = FALSE)
+dim(mydf)
+head(mydf)
+library(dyplr)
+library(dplyr)
+packageVersion("dplyr")
+cran <- tbl_df(mydf)
+rm("mydf")
+cran
+?select
+select(cran, ip_id, package, country)
+5:20
+select(cran, r_arch:country)
+select(cran, country:r_arch)
+print(cran)
+cran
+select(cran, -time)
+-5:20
+-[5:20]
+-(5:20)
+select(cran, -(X:size))
+filter(cran, package = "swirl")
+filter(cran, package == "swirl")
+filter(cran, r_version == "3.1.1", country == "US")
+?Comparison
+filter(cran, r_version <= "3.0.2", country == "IN")
+filter(cran, country == "US" | country == "IN")
+filter(cran, size > 100500, r_os == "linux-gnu")
+is.na(c(3,5,NA, 10))
+!is.na(c(3,5,NA, 10))
+filter(cran, !is.na(r_version))
+cran2 <- select(cran, size:ip_id)
+arrange(cran2, ip_id)
+arrange(cran2, desc(ip_id))
+arrange(cran2, package, ip_id)
+arrange(cran2, country, desc(r_version), ip_id)
+cran3 <- select(cran, ip_id, package, size)
+cran3
+mutate(cran3, size_mb = size / 2^20)
+mutate(cran3, size_mb = size / 2^20, size_gb = size_mb / 2^20)
+mutate(cran3, size_mb = size / 2^20, size_gb = size_mb / 2^10)
+mutate(cran3, correct_size = size + 1000)
+summarise(cran, avg = mean(size))
+summarise(cran, avg_bytes = mean(size))
+summarize(cran, avg_bytes = mean(size))
+setwd("~/Dropbox (fresh4cast)/Learn/ML in R/project/ML-project")
+library(caret)#
+library(kernlab)#
+library(randomForest)#
+library(ggplot2)
+dt = read.csv("pml-training.csv")
+dts = dt[,c(6:160)]#
+inBuild <- createDataPartition(y=dts$classe, p=8/10, list=FALSE)#
+bld <- dts[inBuild,]#
+vld <- dts[-inBuild,]#
+inTrain <- createDataPartition(y=bld$classe, p=6/8, list=FALSE)#
+trn <- bld[inTrain,]#
+tst <- bld[-inTrain,]
+not_na <- function(x) sum(!is.na(x))#
+table(sapply(trn, not_na))#
+trns<-trn[trn$new_window=="yes",(colMeans(is.na(trn)) >0.1 | colnames(trn)=="classe")]
+??findCorrelation
+cor(trns[,-68])
+r1 <- cor(trns[,-68])
+findCorrelation(r1)
+findCorrelation(r1, cutoff=0.999)
+findCorrelation(r1, cutoff=0.99)
+findCorrelation(r1, cutoff=0.95)
+names(trns)
+correlated <- findCorrelation(r1, cutoff=0.95)
+names(trns)[correlated]
+dim(dt)
+r2 <- cor(dt[,-160])
+correlated <- findCorrelation(r1, cutoff=0.9)
+names(trns)[correlated]
+dim(trns)
+trns[,-correlated]
+tt <- trns[,-correlated]
+dim(tt)
+head(tt)
+model_rf <- train(classe ~ ., data=trns, method="rf", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
+model_rf <- train(classe ~ ., data=tt, method="rf", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
+model_rf
+model_rf <- train(classe ~ ., data=tt, method="rf", trControl=trainControl(method="repeatedcv", number=5, repeats = 3))
+model_rfmodel_rf <- train(classe ~ ., data=tt, method="rf", trControl=trainControl(method="cv"))
+model_rfmodel_rf
+model_rf <- train(classe ~ ., data=tt, method="rf", trControl=trainControl(method="repeatedcv", number=5, repeats = 3))
+model_rf
+model_rf <- train(classe ~ ., data=tt, method="rf", preProcess=c("center", "scale"), trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
+model_rf
+model_rf <- train(classe ~ ., data=tt, method="rf", preProcess=c("center", "scale"), trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
+library(rattle)
+fancyPartPlot(model_rf)
+fancyRpartPlot(model_rf)
+model_rf <- train(classe ~ ., data=tt, method="rpart", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
+model_rpart <- train(classe ~ ., data=tt, method="rpart", trControl=trainControl(method="repeatedcv", number=10, repeats = 3))
+fancyRpartPlot(model_rpart)
+library(rattle)
+rattle(model_rpart)
+clear()
+exit()
